@@ -1,21 +1,13 @@
 package com.log.logger
 
-import android.Manifest
 import android.os.Bundle
-import android.util.Log
-import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.google.android.material.snackbar.Snackbar
-import androidx.appcompat.app.AppCompatActivity
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.TextView
-import com.log.logger.permission.PermissionHelper
-import com.log.logger.util.FileUtil
+import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.log.loggerlib.LogCache
-import com.log.loggerlib.LogManger
-import java.io.File
-import java.util.*
-import kotlin.Comparator
+import com.log.loggerlib.LogCache.e
 
 class MainActivity : AppCompatActivity() {
 
@@ -81,12 +73,13 @@ class MainActivity : AppCompatActivity() {
             for (i in 0 until 100) {
                 sp.append(log)
             }
-            LogCache.i(sp)
+            LogCache.i(sp.toString(), LogCache.LOG_KERNEL_DIR)
         }
         findViewById<TextView>(R.id.tvfab).setOnClickListener { view ->
-//            LogManger.checkLogSize()
+
+            LogCache.e("异常eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", LogCache.LOG_MSG_STATISTICS_DIR, LogCache.LOG_KERNEL_DIR)
         }
-        PermissionHelper.isHasAudioPermissions(this, arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE))
+//        PermissionHelper.isHasAudioPermissions(this, arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE))
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {

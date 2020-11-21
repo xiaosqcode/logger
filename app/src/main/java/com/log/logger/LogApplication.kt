@@ -1,10 +1,7 @@
 package com.log.logger
 
 import android.app.Application
-import com.log.logger.util.FileUtil
 import com.log.loggerlib.LogCache
-import com.log.loggerlib.LogManger
-import java.io.File
 
 /**
  * @author xiaosq
@@ -17,7 +14,7 @@ class LogApplication: Application() {
 
     override fun onCreate() {
         super.onCreate()
-        LogManger.init(true, "慧控", File(FileUtil.getLoggerPath(this)))
+        LogCache.init(showLog = true, saveLog = true, tag = "慧控", context = this)
     }
 
 }

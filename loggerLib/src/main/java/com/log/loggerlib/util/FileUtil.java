@@ -127,16 +127,16 @@ public class FileUtil {
     }
 
     /**
-     * 获取存储log日志的文件路径
+     * 获取存储log日志的文件目录
      * @return 路径
      */
-    public static String getLoggerPath(Context context) {
+    public static String getLoggerPath(Context context, String dir) {
         String path;
 
         if(FileUtil.isVersion7()){
-            path = FileUtil.pathAndroid7(context, FileUtil.getDiskCacheDir(context, "log/"));
+            path = FileUtil.pathAndroid7(context, FileUtil.getDiskCacheDir(context, dir));
         }else {
-            path = FileUtil.getDiskCacheDir(context, "log/");
+            path = FileUtil.getDiskCacheDir(context, dir);
         }
 
         // 新建一个File，传入文件夹目录
