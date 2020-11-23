@@ -1,6 +1,7 @@
 package com.log.loggerlib
 
 import android.content.Context
+import android.os.Build
 import android.util.Log
 import com.log.loggerlib.util.FileUtil
 import org.json.JSONArray
@@ -12,9 +13,13 @@ import java.io.PrintWriter
 import java.io.StringWriter
 import java.lang.ref.WeakReference
 import java.net.UnknownHostException
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.nio.file.attribute.BasicFileAttributes
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.Comparator
+import kotlin.concurrent.thread
 
 /**
  * @author xiaosq
@@ -109,13 +114,15 @@ object LogCache {
      * 初始化文件
      */
     private fun initFile() {
-        try {//开启app默认转到核心文件目录
-            mLogFileDir = File(FileUtil.getLoggerPath(mWeakReference!!.get(), LOG_KERNEL_DIR))
-            if (clearBeforeDate > 0) {
-
+        thread(start = true) {
+            try {
+                //每打开app就会检测满指定清除指定天数前的文件
+                clearBeforeDateFile()
+                //开启app默认转到核心文件目录
+                mLogFileDir = File(FileUtil.getLoggerPath(mWeakReference!!.get(), LOG_KERNEL_DIR))
+            } catch (e: Exception) {
+                logger!!.log(E, TAG, "log printFile failed :" + LINE_SEPARATOR + getStackTraceString(e))
             }
-        } catch (e: Exception) {
-            logger!!.log(E, TAG, "log printFile failed :" + LINE_SEPARATOR + getStackTraceString(e))
         }
     }
 
@@ -291,17 +298,69 @@ object LogCache {
         val timeMillis = System.currentTimeMillis()
         //当前写的文件名
         val writeName = "$FILE_PREFIX&$WRITE_FILE_NAME&$FILE_FORMAT"
-        var writeFile = File(mLogFileDir, writeName)
+        val writeFile = File(mLogFileDir, writeName)
 
         if (writeFile.exists()) {
+            //重命名正在写的文件，因为正在写的文件大小已超过最大文件大小
             val isReName = writeFile.renameTo(File(mLogFileDir, "$FILE_PREFIX&$timeMillis&$FILE_FORMAT"))
             if (isReName) {
-                writeFile = File(mLogFileDir, writeName)
-                return writeFile
+                return makeLogFileWithTime(mLogFileDir, WRITE_FILE_NAME.toLong())
             }
         }
 
         return makeLogFileWithTime(mLogFileDir, WRITE_FILE_NAME.toLong())
+    }
+
+    /**
+     * 获取文件创建时间戳
+     */
+    private fun getFileTime(path: String): Long {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Log.i("jfioejsutiostehsds","======111111111====")
+            Files.readAttributes(Paths.get(path), BasicFileAttributes::class.java)
+                .creationTime().toMillis()
+        } else {
+            Log.i("jfioejsutiostehsds","======2222222222====")
+            File(path).lastModified()
+        }
+    }
+
+    /**
+     * 打开app每种类型满20m，就清除2天数前的文件日志
+     */
+    public fun clearBeforeDateFile() {
+        if (clearBeforeDate > 0) {
+            //四种类型
+            val dirArr = arrayOf(LOG_KERNEL_DIR, LOG_MSG_STATISTICS_DIR, LOG_NET_DIR, LOG_DEVICE_DIR)
+            //遍历四种类型的log
+            for (i in dirArr) {
+                //获取类型的目录
+                val dir = File(FileUtil.getLoggerPath(mWeakReference?.get(), i))
+                if (dir.exists() && dir.isDirectory) {
+                    val allFiles: Array<File> = dir.listFiles()!!
+                    if (!allFiles.isNullOrEmpty() && allFiles.size >= maxSaveCount) {
+                        val dirSize = FileUtil.getDirSize(dir)
+                        //是否超过20M
+                        if (dirSize >= (maxSaveCount*fileMaxSize).toDouble()) {
+                            val currentTimeMillis = System.currentTimeMillis()
+                            for (logFile in allFiles) {
+                                val fileName = logFile.name
+                                if (fileName.startsWith(DEFAULT_FILE_PREFIX) && logFile.isFile) {
+                                    val fileTime = getFileTime(logFile.path)
+                                    //文件保存时间间隔
+                                    val createDuration = (currentTimeMillis - fileTime).toFloat() / (60 * 60 * 24 * 1000)
+                                    Log.i("jfioejfosfjefefsdfg", "=====" + createDuration)
+                                    //删除过期文件
+                                    if (createDuration > clearBeforeDate) {
+                                        logFile.delete()
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /**

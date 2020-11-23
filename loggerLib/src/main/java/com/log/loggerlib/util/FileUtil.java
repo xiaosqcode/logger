@@ -7,6 +7,8 @@ import android.os.Environment;
 
 import androidx.core.content.FileProvider;
 
+import com.log.loggerlib.LogCache;
+
 import java.io.File;
 
 public class FileUtil {
@@ -147,6 +149,29 @@ public class FileUtil {
             file.mkdirs();
         }
         return path;
+    }
+
+    public static double getDirSize(File file) {
+        //判断文件是否存在
+        if (file.exists()) {
+            //如果是目录则递归计算其内容的总大小
+            if (file.isDirectory()) {
+                File[] children = file.listFiles();
+                double size = 0;
+                if (children != null) {
+                    for (File f : children) {
+                        if (f.getName().startsWith(LogCache.DEFAULT_FILE_PREFIX)) {
+                            size += getDirSize(f);
+                        }
+                    }
+                }
+                return size;
+            } else {//如果是文件则直接返回其大小,以“兆”为单位
+                return (double) file.length() / 1024 / 1024;
+            }
+        } else {
+            return 0.0;
+        }
     }
 
 }
